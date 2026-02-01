@@ -124,8 +124,20 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 <h3 className="text-[10px] font-semibold text-[#8a7e6e] uppercase tracking-wider mb-2">
                   Description
                 </h3>
-                <div className="text-sm text-[#b8a88a] leading-relaxed bg-[#1a1714]/60 rounded-lg p-3 border border-[#2a2520]">
-                  {task.description}
+                <div className="prose prose-sm prose-invert max-w-none
+                  prose-headings:text-[#e8e0d4] prose-headings:font-serif prose-headings:mt-3 prose-headings:mb-1
+                  prose-h2:text-base prose-h3:text-sm
+                  prose-p:text-[#b8a88a] prose-p:leading-relaxed prose-p:my-1
+                  prose-strong:text-[#d4c4a8]
+                  prose-a:text-[#c9956b] prose-a:no-underline hover:prose-a:underline
+                  prose-li:text-[#b8a88a] prose-li:my-0.5
+                  prose-ul:my-1 prose-ol:my-1
+                  prose-hr:border-[#3a332b] prose-hr:my-3
+                  prose-code:text-[#c9956b] prose-code:bg-[#2a2520] prose-code:px-1 prose-code:rounded
+                  prose-blockquote:border-[#c9956b] prose-blockquote:text-[#8a7e6e]
+                  bg-[#1a1714]/60 rounded-lg p-4 border border-[#2a2520]
+                ">
+                  <ReactMarkdown>{task.description}</ReactMarkdown>
                 </div>
               </div>
             )}
