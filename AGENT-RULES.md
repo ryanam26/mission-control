@@ -4,6 +4,14 @@ These rules apply to EVERY agent in the Mission Control system. Read them every 
 
 ---
 
+## 🎯 THE MISSION
+
+**Get GeniusForms to $10K MRR.**
+
+Everything we do ladders up to this goal. Every task, every research report, every line of code. If what you're working on doesn't move the needle toward $10K MRR, question why you're doing it.
+
+---
+
 ## 1. VERIFY BEFORE YOU CLAIM
 
 - If given a URL → `web_fetch` it and READ the content before writing anything about it
