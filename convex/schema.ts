@@ -33,16 +33,18 @@ export default defineSchema({
     .index("by_status", ["status"]),
 
   // Tasks — the shared kanban board
+  // Flow: backlog → refining → todo → in_progress → review → done
   tasks: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
     status: v.union(
-      v.literal("inbox"),
-      v.literal("assigned"),
-      v.literal("in_progress"),
-      v.literal("review"),
-      v.literal("done"),
-      v.literal("blocked")
+      v.literal("backlog"),      // Raw ideas, needs refinement
+      v.literal("refining"),     // Spec/Scout doing research, analysis, planning
+      v.literal("todo"),         // Ready for dev (after QA review of refining)
+      v.literal("in_progress"),  // Actively being worked
+      v.literal("review"),       // Work done, needs human review
+      v.literal("done"),         // Shipped
+      v.literal("blocked")       // Stuck on something
     ),
     priority: v.union(
       v.literal("low"),

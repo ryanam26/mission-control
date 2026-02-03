@@ -41,7 +41,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const assignees = args.assignees || [];
-    const status = assignees.length > 0 ? "assigned" : "inbox";
+    const status = assignees.length > 0 ? "refining" : "backlog";
 
     const taskId = await ctx.db.insert("tasks", {
       title: args.title,
@@ -106,8 +106,9 @@ export const move = mutation({
   args: {
     taskId: v.id("tasks"),
     status: v.union(
-      v.literal("inbox"),
-      v.literal("assigned"),
+      v.literal("backlog"),
+      v.literal("refining"),
+      v.literal("todo"),
       v.literal("in_progress"),
       v.literal("review"),
       v.literal("done"),
