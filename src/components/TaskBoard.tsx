@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { priorityColor, KANBAN_COLUMNS, AGENT_EMOJIS } from "@/lib/utils";
@@ -54,7 +54,7 @@ function SortableTaskCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0 : 1, // Hide original when dragging (overlay shows it)
   };
 
   return (
@@ -220,25 +220,37 @@ function DroppableColumn({
 export default function TaskBoard() {
   const tasks = useQuery(api.tasks.list, {});
   const moveTask = useMutation(api.tasks.move);
-  const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(
-    null
-  );
+  const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  
+  // Optimistic updates: track pending moves locally
+  const [optimisticMoves, setOptimisticMoves] = useState<Record<string, string>>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Require 8px of movement before starting drag
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor)
   );
 
-  // Group tasks by status
+  // Apply optimistic moves to tasks
+  const tasksWithOptimisticUpdates = useMemo(() => {
+    if (!tasks) return null;
+    return tasks.map((task) => {
+      const optimisticStatus = optimisticMoves[task._id];
+      if (optimisticStatus) {
+        return { ...task, status: optimisticStatus };
+      }
+      return task;
+    });
+  }, [tasks, optimisticMoves]);
+
+  // Group tasks by status (using optimistic data)
   const tasksByStatus: Record<string, Task[]> = {};
   for (const col of KANBAN_COLUMNS) {
-    tasksByStatus[col.id] = (tasks?.filter((t) => t.status === col.id) ??
-      []) as Task[];
+    tasksByStatus[col.id] = (tasksWithOptimisticUpdates?.filter((t) => t.status === col.id) ?? []) as Task[];
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -259,13 +271,11 @@ export default function TaskBoard() {
     // Find which column we dropped into
     let targetColumn: string | null = null;
 
-    // Check if over.id is a column ID directly (from useDroppable)
     const matchedCol = KANBAN_COLUMNS.find((c) => c.id === over.id);
     if (matchedCol) {
       targetColumn = matchedCol.id;
     } else {
-      // Check if we dropped on another task - use that task's column
-      const overTask = tasks?.find((t) => t._id === over.id);
+      const overTask = tasksWithOptimisticUpdates?.find((t) => t._id === over.id);
       if (overTask) {
         targetColumn = overTask.status;
       }
@@ -273,7 +283,6 @@ export default function TaskBoard() {
 
     if (!targetColumn || targetColumn === activeTaskData.status) return;
 
-    // Validate it's a valid status
     const validStatuses = [
       "backlog",
       "refining",
@@ -285,7 +294,13 @@ export default function TaskBoard() {
     ];
     if (!validStatuses.includes(targetColumn)) return;
 
-    // Move the task
+    // OPTIMISTIC UPDATE: Immediately update local state
+    setOptimisticMoves((prev) => ({
+      ...prev,
+      [activeTaskId]: targetColumn!,
+    }));
+
+    // Fire mutation (will sync with server)
     moveTask({
       taskId: activeTaskId,
       status: targetColumn as
@@ -297,19 +312,30 @@ export default function TaskBoard() {
         | "done"
         | "blocked",
       movedBy: "human",
+    }).then(() => {
+      // Clear optimistic state once server confirms
+      setOptimisticMoves((prev) => {
+        const next = { ...prev };
+        delete next[activeTaskId];
+        return next;
+      });
+    }).catch(() => {
+      // Revert on error
+      setOptimisticMoves((prev) => {
+        const next = { ...prev };
+        delete next[activeTaskId];
+        return next;
+      });
     });
   };
 
-  // Custom collision detection that accounts for columns
   const customCollisionDetection = (args: Parameters<typeof closestCorners>[0]) => {
     const collisions = closestCorners(args);
     
-    // If no collisions with tasks, check if we're over a column
     if (collisions.length === 0 || !collisions[0]) {
       const { droppableContainers, pointerCoordinates } = args;
       if (!pointerCoordinates) return collisions;
 
-      // Find which column we're hovering over based on position
       for (const container of droppableContainers) {
         const rect = container.rect.current;
         if (rect && pointerCoordinates.x >= rect.left &&
@@ -358,7 +384,6 @@ export default function TaskBoard() {
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="flex gap-3 p-4 h-full min-w-max">
             {!tasks ? (
-              // Loading skeleton
               KANBAN_COLUMNS.map((col) => (
                 <div
                   key={col.id}
