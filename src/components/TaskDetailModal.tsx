@@ -66,8 +66,9 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
   }
 
   const statusLabels: Record<string, string> = {
-    inbox: "📥 Inbox",
-    assigned: "📌 Assigned",
+    backlog: "📥 Backlog",
+    refining: "🔬 Refining",
+    todo: "📋 To Do",
     in_progress: "🔨 In Progress",
     review: "👀 Review",
     done: "✅ Done",

@@ -115,10 +115,12 @@ export function levelBadge(level: string): { label: string; className: string } 
 
 /**
  * Kanban column config
+ * Flow: backlog → refining → todo → in_progress → review → done
  */
 export const KANBAN_COLUMNS = [
-  { id: "inbox", label: "Inbox", icon: "📥" },
-  { id: "assigned", label: "Assigned", icon: "📌" },
+  { id: "backlog", label: "Backlog", icon: "📥" },
+  { id: "refining", label: "Refining", icon: "🔬" },
+  { id: "todo", label: "To Do", icon: "📋" },
   { id: "in_progress", label: "In Progress", icon: "🔨" },
   { id: "review", label: "Review", icon: "👀" },
   { id: "done", label: "Done", icon: "✅" },
